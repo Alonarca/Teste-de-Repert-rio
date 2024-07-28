@@ -1,0 +1,116 @@
+import pygame
+import sys
+import math
+
+# Inicializa o Pygame
+pygame.init()
+
+# Configurações da tela
+largura_tela = 800
+altura_tela = 600
+tela = pygame.display.set_mode((largura_tela, altura_tela))
+pygame.display.set_caption("Disco de Newton")
+
+# Cores do disco de Newton
+cores = [(255, 0, 0), (255, 127, 0), (255, 255, 0), (0, 255, 0), (0, 0, 255), (75, 0, 130), (148, 0, 211)]
+
+# Função para calcular a cor misturada
+def misturar_cores(cores, fator_mistura):
+    cor_misturada = [0, 0, 0]
+    for cor in cores:
+        for i in range(3):
+            cor_misturada[i] += cor[i]
+    cor_misturada = [int(c / len(cores)) for c in cor_misturada]
+    cor_branca = [255, 255, 255]
+    cor_final = [int(fator_mistura * cor_branca[i] + (1 - fator_mistura) * cor_misturada[i]) for i in range(3)]
+    return cor_final
+
+# Função para desenhar o disco
+def desenhar_disco_newton(tela, x, y, raio, cores, deslocamento_angulo, velocidade_giro):
+    num_cores = len(cores)
+    fator_mistura = min(velocidade_giro / 100, 1)  # Calcula o fator de mistura baseado na velocidade
+    for i, cor in enumerate(cores):
+        angulo_inicio = deslocamento_angulo + (i * (360 / num_cores))
+        angulo_fim = angulo_inicio + (360 / num_cores)
+        cor_misturada = misturar_cores([cor], fator_mistura)
+        
+        # Calcula os pontos do segmento do disco
+        pontos = [(x, y)]
+        for angulo in range(int(angulo_inicio), int(angulo_fim) + 1):
+            angulo_rad = math.radians(angulo)
+            pontos.append((x + raio * math.cos(angulo_rad), y - raio * math.sin(angulo_rad)))
+        
+        # Desenha o segmento do disco
+        pygame.draw.polygon(tela, cor_misturada, pontos)
+    
+    # Desenha uma linha preta ao redor do círculo
+    pygame.draw.circle(tela, (0, 0, 0), (x, y), raio, 1)
+
+# Função para desenhar botões
+def desenhar_botao(tela, texto, x, y, largura, altura):
+    fonte = pygame.font.SysFont(None, 40)
+    retangulo_botao = pygame.Rect(x, y, largura, altura)
+    pygame.draw.rect(tela, (0, 0, 0), retangulo_botao, 2)  # Bordas pretas para contraste com o fundo branco
+    superficie_texto = fonte.render(texto, True, (0, 0, 0))  # Texto preto para contraste com o fundo branco
+    tela.blit(superficie_texto, (x + (largura - superficie_texto.get_width()) // 2, y + (altura - superficie_texto.get_height()) // 2))
+    return retangulo_botao
+
+# Desenha os botões antes do loop principal
+botao_girar = desenhar_botao(tela, "Girar", largura_tela // 2 - 100, altura_tela - 80, 80, 40)
+botao_parar = desenhar_botao(tela, "Parar", largura_tela // 2 + 20, altura_tela - 80, 80, 40)
+
+# Loop principal
+rodando = True
+girando = False
+deslocamento_angulo = 0
+velocidade_giro = 0
+desacelerando = False
+
+# Calcula a taxa de alteração da velocidade
+fps = 60
+taxa_aceleracao = 100 / (3 * fps)  # Acelera até 100 em 3 segundos
+taxa_desaceleracao = 100 / (3 * fps)  # Desacelera até 0 em 3 segundos
+
+while rodando:
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            rodando = False
+        elif evento.type == pygame.MOUSEBUTTONDOWN:
+            if botao_girar.collidepoint(evento.pos):
+                girando = True
+                desacelerando = False
+                velocidade_giro = 10  # Define a velocidade inicial de rotação
+            elif botao_parar.collidepoint(evento.pos):
+                desacelerando = True
+
+    tela.fill((255, 255, 255))  # Preenche a tela com branco
+
+    if girando and not desacelerando:
+        deslocamento_angulo += velocidade_giro
+        if deslocamento_angulo >= 360:
+            deslocamento_angulo = 0
+        if velocidade_giro < 100:
+            velocidade_giro += taxa_aceleracao  # Aumenta a velocidade gradualmente
+
+    if desacelerando:
+        if velocidade_giro > 0:
+            velocidade_giro -= taxa_desaceleracao  # Diminui a velocidade gradualmente
+            deslocamento_angulo += velocidade_giro
+            if deslocamento_angulo >= 360:
+                deslocamento_angulo = 0
+        else:
+            velocidade_giro = 0
+            girando = False
+            desacelerando = False
+
+    # Desenha o disco de Newton no centro da tela
+    desenhar_disco_newton(tela, largura_tela // 2, altura_tela // 2, 100, cores, deslocamento_angulo, velocidade_giro)
+
+    # Redesenha os botões para mantê-los visíveis
+    botao_girar = desenhar_botao(tela, "Girar", largura_tela // 2 - 100, altura_tela - 80, 80, 40)
+    botao_parar = desenhar_botao(tela, "Parar", largura_tela // 2 + 20, altura_tela - 80, 80, 40)
+
+    pygame.display.flip()  # Atualiza a tela
+
+pygame.quit()
+sys.exit()
