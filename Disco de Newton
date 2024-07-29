@@ -46,14 +46,32 @@ def desenhar_disco_newton(tela, x, y, raio, cores, deslocamento_angulo, velocida
     # Desenha uma linha preta ao redor do círculo
     pygame.draw.circle(tela, (0, 0, 0), (x, y), raio, 1)
 
+# Função para desenhar um fundo gradiente
+def desenhar_fundo_gradiente(tela, cor_inicial, cor_final):
+    for i in range(altura_tela):
+        cor_intermediaria = [
+            cor_inicial[j] + (cor_final[j] - cor_inicial[j]) * i // altura_tela
+            for j in range(3)
+        ]
+        pygame.draw.line(tela, cor_intermediaria, (0, i), (largura_tela, i))
+
 # Função para desenhar botões
-def desenhar_botao(tela, texto, x, y, largura, altura):
+def desenhar_botao(tela, texto, x, y, largura, altura, cor_fundo=(200, 200, 200), cor_borda=(0, 0, 0)):
     fonte = pygame.font.SysFont(None, 40)
     retangulo_botao = pygame.Rect(x, y, largura, altura)
-    pygame.draw.rect(tela, (0, 0, 0), retangulo_botao, 2)  # Bordas pretas para contraste com o fundo branco
-    superficie_texto = fonte.render(texto, True, (0, 0, 0))  # Texto preto para contraste com o fundo branco
+    pygame.draw.rect(tela, cor_fundo, retangulo_botao)
+    pygame.draw.rect(tela, cor_borda, retangulo_botao, 2)
+    superficie_texto = fonte.render(texto, True, cor_borda)
     tela.blit(superficie_texto, (x + (largura - superficie_texto.get_width()) // 2, y + (altura - superficie_texto.get_height()) // 2))
     return retangulo_botao
+
+# Carrega a imagem de Newton
+try:
+    imagem_newton = pygame.image.load("C:\\Users\\USUARIO\\Desktop\\Alon PROGRAMAÇÃO\\NC.png")
+    imagem_newton = pygame.transform.scale(imagem_newton, (largura_tela, altura_tela))  # Redimensiona a imagem para 800x600 pixels
+except pygame.error as e:
+    print(f"Não foi possível carregar a imagem: {e}")
+    sys.exit()
 
 # Desenha os botões antes do loop principal
 botao_girar = desenhar_botao(tela, "Girar", largura_tela // 2 - 100, altura_tela - 80, 80, 40)
@@ -83,7 +101,8 @@ while rodando:
             elif botao_parar.collidepoint(evento.pos):
                 desacelerando = True
 
-    tela.fill((255, 255, 255))  # Preenche a tela com branco
+    # Desenha a imagem de Newton no fundo da tela
+    tela.blit(imagem_newton, (0, 0))
 
     if girando and not desacelerando:
         deslocamento_angulo += velocidade_giro
@@ -107,8 +126,8 @@ while rodando:
     desenhar_disco_newton(tela, largura_tela // 2, altura_tela // 2, 100, cores, deslocamento_angulo, velocidade_giro)
 
     # Redesenha os botões para mantê-los visíveis
-    botao_girar = desenhar_botao(tela, "Girar", largura_tela // 2 - 100, altura_tela - 80, 80, 40)
-    botao_parar = desenhar_botao(tela, "Parar", largura_tela // 2 + 20, altura_tela - 80, 80, 40)
+    botao_girar = desenhar_botao(tela, "Girar", largura_tela // 2 - 100, altura_tela - 80, 80, 40, cor_fundo=(0, 255, 0))
+    botao_parar = desenhar_botao(tela, "Parar", largura_tela // 2 + 20, altura_tela - 80, 80, 40, cor_fundo=(255, 0, 0))
 
     pygame.display.flip()  # Atualiza a tela
 
